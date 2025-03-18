@@ -1,6 +1,8 @@
 package sunandmoon;
 
 import com.jme3.app.SimpleApplication;
+import com.jme3.font.BitmapFont;
+import com.jme3.font.BitmapText;
 import com.jme3.material.Material;
 import com.jme3.math.ColorRGBA;
 import com.jme3.math.Quaternion;
@@ -21,6 +23,7 @@ public class SunAndMoon extends SimpleApplication {
     private float angle = 0;
     private Node earthOrbitNode;
     private Node nextPlanetOrbitNode;
+    private Node moonOrbitNode;
 
     // da startet unseres Programm
     public static void main(String[] args) {
@@ -33,40 +36,54 @@ public class SunAndMoon extends SimpleApplication {
         app.start();
     }
 
-    // da schreibt man alle Objekte und Eigenschaften dazu
     @Override
     public void simpleInitApp() {
 
-        //cameraman
+        // Kamera
         cam.setLocation(new Vector3f(100, 100, -40));
         cam.lookAt(new Vector3f(0, 0, 0), Vector3f.UNIT_Y);
         flyCam.setMoveSpeed(25);
 
-        // sun
-        Sphere s = new Sphere(100,100,5);
+        // Sonne
+        Sphere s = new Sphere(100, 100, 5);
         Geometry sun = new Geometry("Sun", s);
         Material sunMat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
         sunMat.setColor("Color", ColorRGBA.Yellow);
         sun.setMaterial(sunMat);
-        sun.setLocalTranslation(0,0,0);
+        sun.setLocalTranslation(0, 0, 0);
         rootNode.attachChild(sun);
-
-        // earth
         earthOrbitNode = new Node("EarthOrbit");
+
         rootNode.attachChild(earthOrbitNode);
-        Sphere e = new Sphere(100,100,1);
-        Geometry eth = new Geometry("Earth", e);
+        Node earthNode = new Node("EarthNode");
+
+        // Erde
+        Sphere e = new Sphere(100, 100, 1);
+        Geometry earthGeo = new Geometry("Earth", e);
         Material earthMat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
         earthMat.setColor("Color", ColorRGBA.Blue);
-        eth.setMaterial(earthMat);
-        eth.setLocalTranslation(20, 0, 0);
-        earthOrbitNode.attachChild(eth);
+        earthGeo.setMaterial(earthMat);
+        earthNode.attachChild(earthGeo);
+        earthNode.setLocalTranslation(20, 0, 0);
+        earthOrbitNode.attachChild(earthNode);
+
+        moonOrbitNode = new Node("MoonOrbit");
+        earthNode.attachChild(moonOrbitNode);
+
+        // Mond
+        Sphere m = new Sphere(100, 100, 0.5f);
+        Geometry moonGeo = new Geometry("Moon", m);
+        Material moonMat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
+        moonMat.setColor("Color", ColorRGBA.White);
+        moonGeo.setMaterial(moonMat);
+        moonGeo.setLocalTranslation(5, 0, 0);
+        moonOrbitNode.attachChild(moonGeo);
 
 
         // nextplanet
         nextPlanetOrbitNode = new Node("NextPlanetOrbit");
         rootNode.attachChild(nextPlanetOrbitNode);
-        Sphere np = new Sphere(100,100,2);
+        Sphere np = new Sphere(100,100,3);
         Geometry nextPlanet = new Geometry("NextPlanet", np);
         Material nextPlanetMat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
         nextPlanetMat.setColor("Color", ColorRGBA.Green);
@@ -74,7 +91,7 @@ public class SunAndMoon extends SimpleApplication {
         nextPlanet.setLocalTranslation(40, 0, 0);
         nextPlanetOrbitNode.attachChild(nextPlanet);
 
-
+        initUI();
     }
 
     // da geht's um die Bewegungen und Animationen
@@ -90,11 +107,52 @@ public class SunAndMoon extends SimpleApplication {
         Quaternion rotationNextPlanet = new Quaternion();
         rotationNextPlanet.fromAngleAxis(angle * 0.5f, Vector3f.UNIT_Y);
         nextPlanetOrbitNode.setLocalRotation(rotationNextPlanet);
+
+        // Mondbewegung um die Erde
+        Quaternion rotationMoon = new Quaternion();
+        rotationMoon.fromAngleAxis(angle * 0.3f, Vector3f.UNIT_Y); // Mond rotiert schneller als Erde
+
+        // Mond bewegt sich relativ zur Erde auf einer Umlaufbahn
+        //Vector3f moonPosition = rotationMoon.mult(new Vector3f(10, 5, 0)); // Abstand beibehalten
+        //moonOrbitNode.setLocalTranslation(moonPosition);
     }
 
     // keine Ahnung, irgendwelche Scheiders Grafiks und so
     @Override
     public void simpleRender(RenderManager rm) {
 
+    }
+
+    private void initUI() {
+        // Lade das Standard-Font
+        BitmapFont guiFont = assetManager.loadFont("Interface/Fonts/Default.fnt");
+
+        // ----- Buttons (als BitmapText, nur zur Anzeige) -----
+        // Button "Start"
+        BitmapText btnStart = new BitmapText(guiFont, false);
+        btnStart.setText("[ Start ]");
+        btnStart.setLocalTranslation(10, cam.getHeight() - 50, 0);
+        guiNode.attachChild(btnStart);
+
+        // Button "Stop"
+        BitmapText btnStop = new BitmapText(guiFont, false);
+        btnStop.setText("[ Stop ]");
+        btnStop.setLocalTranslation(10, cam.getHeight() - 80, 0);
+        guiNode.attachChild(btnStop);
+
+        // Button "Reset"
+        BitmapText btnReset = new BitmapText(guiFont, false);
+        btnReset.setText("[ Reset ]");
+        btnReset.setLocalTranslation(10, cam.getHeight() - 110, 0);
+        guiNode.attachChild(btnReset);
+
+        // ----- Kalender oben rechts -----
+        // Erzeuge einen String mit dem aktuellen Datum
+        String currentDate = java.time.LocalDate.now().toString(); // z.B. "2025-03-18"
+        BitmapText calendar = new BitmapText(guiFont, false);
+        calendar.setText("Kalender: " + currentDate);
+        // Positioniere den Kalender oben rechts; berechne die X-Position anhand der Textbreite
+        calendar.setLocalTranslation(cam.getWidth() - calendar.getLineWidth() - 10, cam.getHeight() - 10, 0);
+        guiNode.attachChild(calendar);
     }
 }
