@@ -24,7 +24,6 @@ public class SunAndMoon extends SimpleApplication {
     private Node earthOrbitNode;
     private Node nextPlanetOrbitNode;
     private Node moonOrbitNode;
-    private float f;
 
     // da startet unseres Programm
     public static void main(String[] args) {
