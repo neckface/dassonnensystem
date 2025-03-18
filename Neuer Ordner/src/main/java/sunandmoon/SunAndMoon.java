@@ -37,7 +37,7 @@ public class SunAndMoon extends SimpleApplication {
     @Override
     public void simpleInitApp() {
 
-        //cameraman
+        //cameraman alles gut
         cam.setLocation(new Vector3f(100, 100, -40));
         cam.lookAt(new Vector3f(0, 0, 0), Vector3f.UNIT_Y);
         flyCam.setMoveSpeed(25);
