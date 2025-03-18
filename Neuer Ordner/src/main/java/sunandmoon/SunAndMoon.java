@@ -37,7 +37,7 @@ public class SunAndMoon extends SimpleApplication {
 
         AppSettings settings = new AppSettings(true);
         settings.setResolution(1440, 940);
-        settings.setTitle("Sonnensystem-Simulation mit allen Planeten");
+        settings.setTitle("Sonnensystem-Simulation");
         app.setSettings(settings);
 
         app.start();
@@ -56,7 +56,7 @@ public class SunAndMoon extends SimpleApplication {
         rootNode.addLight(sunLight);
 
         // Sonne erstellen
-        Sphere sunSphere = new Sphere(32, 32, 20f);
+        Sphere sunSphere = new Sphere(32, 32, 12f);
         Geometry sun = new Geometry("Sun", sunSphere);
         Material sunMat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
         sunMat.setColor("Color", ColorRGBA.Yellow);
@@ -83,7 +83,7 @@ public class SunAndMoon extends SimpleApplication {
         planetSpeeds.put("Neptune", FastMath.TWO_PI / 6019f);
 
         ColorRGBA[] planetColors = {
-            ColorRGBA.Gray, ColorRGBA.Orange, ColorRGBA.Blue,
+            ColorRGBA.Blue, ColorRGBA.Orange, ColorRGBA.Blue,
             ColorRGBA.Red, ColorRGBA.Brown, ColorRGBA.Yellow,
             ColorRGBA.Cyan, ColorRGBA.Magenta
         };
