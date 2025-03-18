@@ -15,6 +15,8 @@ import com.jme3.system.AppSettings;
  * This is the Main Class of your Game. It should boot up your game and do initial initialisation
  * Move your Logic into AppStates or Controls or other java classes
  */
+
+//https://science.nasa.gov/earth/facts/ - Erde infos
 public class SunAndMoon extends SimpleApplication {
 
     // da kann man globale Variablen hinzufüfgen
