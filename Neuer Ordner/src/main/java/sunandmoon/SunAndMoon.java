@@ -31,6 +31,7 @@ public class SunAndMoon extends SimpleApplication {
     private HashMap<String, Geometry> planets = new HashMap<>();
     private HashMap<String, Float> planetDistances = new HashMap<>();
     private HashMap<String, Float> planetSpeeds = new HashMap<>();
+    private HashMap<String, Float> planetAngles = new HashMap<>();
 
     public static void main(String[] args) {
         SunAndMoon app = new SunAndMoon();
@@ -73,14 +74,25 @@ public class SunAndMoon extends SimpleApplication {
         planetDistances.put("Uranus", 110f);
         planetDistances.put("Neptune", 130f);
 
-        planetSpeeds.put("Mercury", FastMath.TWO_PI / 8f);
-        planetSpeeds.put("Venus", FastMath.TWO_PI / 20f);
-        planetSpeeds.put("Earth", FastMath.TWO_PI / 36.5f);
-        planetSpeeds.put("Mars", FastMath.TWO_PI / 68.7f);
-        planetSpeeds.put("Jupiter", FastMath.TWO_PI / 433f);
-        planetSpeeds.put("Saturn", FastMath.TWO_PI / 1076f);
-        planetSpeeds.put("Uranus", FastMath.TWO_PI / 3067f);
-        planetSpeeds.put("Neptune", FastMath.TWO_PI / 6019f);
+        float timeScale = 1f/8f;
+        planetSpeeds.put("Mercury", FastMath.TWO_PI / (88f * timeScale));
+        planetSpeeds.put("Venus", FastMath.TWO_PI / (225f * timeScale));
+        planetSpeeds.put("Earth", FastMath.TWO_PI / (365f * timeScale));
+        planetSpeeds.put("Mars", FastMath.TWO_PI / (687f * timeScale));
+        planetSpeeds.put("Jupiter", FastMath.TWO_PI / (4333f * timeScale));
+        planetSpeeds.put("Saturn", FastMath.TWO_PI / (10759f * timeScale));
+        planetSpeeds.put("Uranus", FastMath.TWO_PI / (30687f * timeScale));
+        planetSpeeds.put("Neptune", FastMath.TWO_PI / (60190f * timeScale));
+
+        // Додаємо початкові кути обертання для кожної планети
+        planetAngles.put("Mercury", 0f);
+        planetAngles.put("Venus", FastMath.PI / 4);  // 45 градусів
+        planetAngles.put("Earth", FastMath.PI / 2);  // 90 градусів
+        planetAngles.put("Mars", 3 * FastMath.PI / 4); // 135 градусів
+        planetAngles.put("Jupiter", FastMath.PI);    // 180 градусів
+        planetAngles.put("Saturn", 5 * FastMath.PI / 4); // 225 градусів
+        planetAngles.put("Uranus", 3 * FastMath.PI / 2); // 270 градусів
+        planetAngles.put("Neptune", 7 * FastMath.PI / 4); // 315 градусів
 
         ColorRGBA[] planetColors = {
             ColorRGBA.Blue, ColorRGBA.Orange, ColorRGBA.Blue,
@@ -94,7 +106,20 @@ public class SunAndMoon extends SimpleApplication {
             rootNode.attachChild(orbitNode);
             addOrbit(planetDistances.get(name), planetColors[index], rootNode);
 
-            Sphere sphere = new Sphere(32, 32, name.equals("Jupiter") ? 3f : name.equals("Saturn") ? 2.5f : 1.5f);
+            float radius;
+            switch (name) {
+                case "Mercury": radius = 0.04f; break;
+                case "Venus":   radius = 0.10f; break;
+                case "Earth":   radius = 0.11f; break;
+                case "Mars":    radius = 0.06f; break;
+                case "Jupiter": radius = 1.20f; break;
+                case "Saturn":  radius = 1.00f; break;
+                case "Uranus":  radius = 0.44f; break;
+                case "Neptune": radius = 0.42f; break;
+                default:        radius = 0.11f; break; // За замовчуванням
+            }
+
+            Sphere sphere = new Sphere(32, 32, radius);
             Geometry planet = new Geometry(name, sphere);
             Material mat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
             mat.setColor("Color", planetColors[index]);
@@ -106,11 +131,12 @@ public class SunAndMoon extends SimpleApplication {
             index++;
         }
 
+
         // Erde & Mond separat behandeln
         earthOrbitNode = planetOrbits.get("Earth");
         earth = planets.get("Earth");
 
-        Sphere moonSphere = new Sphere(32, 32, 0.8f);
+        Sphere moonSphere = new Sphere(32, 32, 0.03f);
         moon = new Geometry("Moon", moonSphere);
         Material moonMat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
         moonMat.setColor("Color", ColorRGBA.White);
@@ -123,7 +149,7 @@ public class SunAndMoon extends SimpleApplication {
     }
 
     private void addOrbit(float radius, ColorRGBA color, Node parentNode) {
-        Torus orbitShape = new Torus(100, 2, 0.1f, radius);
+        Torus orbitShape = new Torus(100, 2, 0.02f, radius);
         Geometry orbit = new Geometry("Orbit", orbitShape);
         Material orbitMat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
         orbitMat.setColor("Color", color.mult(0.5f));
@@ -153,20 +179,27 @@ public class SunAndMoon extends SimpleApplication {
     @Override
     public void simpleUpdate(float tpf) {
         for (String name : planets.keySet()) {
-            float angle = planetSpeeds.get(name) * tpf;
-            Node orbitNode = planetOrbits.get(name);
-            Quaternion rotation = new Quaternion();
-            rotation.fromAngleAxis(angle, Vector3f.UNIT_Y);
-            orbitNode.setLocalRotation(rotation);
-
-            Geometry planet = planets.get(name);
+            float speed = planetSpeeds.get(name);
             float distance = planetDistances.get(name);
-            planet.setLocalTranslation(distance * FastMath.cos(angle), 0, distance * FastMath.sin(angle));
+
+            // Оновлюємо кут планети (окремо для кожної)
+            float currentAngle = planetAngles.get(name);
+            currentAngle += speed * tpf;
+            planetAngles.put(name, currentAngle);
+
+            // Позиція планети по орбіті навколо Сонця
+            float x = distance * FastMath.cos(currentAngle);
+            float z = distance * FastMath.sin(currentAngle);
+
+            // Оновлюємо позицію планети
+            Geometry planet = planets.get(name);
+            planet.setLocalTranslation(x, 0, z);
         }
 
-        // Mond bewegt sich um die Erde
-        float moonX = earth.getLocalTranslation().x + 4f * FastMath.cos(angleMoon);
-        float moonZ = earth.getLocalTranslation().z + 4f * FastMath.sin(angleMoon);
+        // Рух Місяця навколо Землі
+        angleMoon += FastMath.TWO_PI / 27.32f * tpf;  // 27.32 дні - орбітальний період Місяця
+        float moonX = earth.getLocalTranslation().x + 0.8f * FastMath.cos(angleMoon);
+        float moonZ = earth.getLocalTranslation().z + 0.8f * FastMath.sin(angleMoon);
         moon.setLocalTranslation(moonX, 0, moonZ);
     }
 
