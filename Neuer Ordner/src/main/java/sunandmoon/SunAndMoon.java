@@ -16,7 +16,7 @@ import com.jme3.scene.shape.Sphere;
 import com.jme3.scene.shape.Torus;
 import com.jme3.scene.Node;
 import com.jme3.system.AppSettings;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 
 public class SunAndMoon extends SimpleApplication {
 
@@ -27,11 +27,11 @@ public class SunAndMoon extends SimpleApplication {
     private Node earthOrbitNode;
     private Geometry earth, moon;
 
-    private HashMap<String, Node> planetOrbits = new HashMap<>();
-    private HashMap<String, Geometry> planets = new HashMap<>();
-    private HashMap<String, Float> planetDistances = new HashMap<>();
-    private HashMap<String, Float> planetSpeeds = new HashMap<>();
-    private HashMap<String, Float> planetAngles = new HashMap<>();
+    private LinkedHashMap<String, Node> planetOrbits = new LinkedHashMap<>();
+    private LinkedHashMap<String, Geometry> planets = new LinkedHashMap<>();
+    private LinkedHashMap<String, Float> planetDistances = new LinkedHashMap<>();
+    private LinkedHashMap<String, Float> planetSpeeds = new LinkedHashMap<>();
+    private LinkedHashMap<String, Float> planetAngles = new LinkedHashMap<>();
 
     public static void main(String[] args) {
         SunAndMoon app = new SunAndMoon();
@@ -74,7 +74,7 @@ public class SunAndMoon extends SimpleApplication {
         planetDistances.put("Uranus", 110f);
         planetDistances.put("Neptune", 130f);
 
-        float timeScale = 1f/8f;
+        float timeScale = 1f/12f;
         planetSpeeds.put("Mercury", FastMath.TWO_PI / (88f * timeScale));
         planetSpeeds.put("Venus", FastMath.TWO_PI / (225f * timeScale));
         planetSpeeds.put("Earth", FastMath.TWO_PI / (365f * timeScale));
@@ -95,9 +95,14 @@ public class SunAndMoon extends SimpleApplication {
         planetAngles.put("Neptune", 7 * FastMath.PI / 4); // 315 градусів
 
         ColorRGBA[] planetColors = {
-            ColorRGBA.Blue, ColorRGBA.Orange, ColorRGBA.Blue,
-            ColorRGBA.Red, ColorRGBA.Brown, ColorRGBA.Yellow,
-            ColorRGBA.Cyan, ColorRGBA.Magenta
+            ColorRGBA.Gray,   // Mercury
+            ColorRGBA.Orange, // Venus
+            ColorRGBA.Blue,   // Earth
+            ColorRGBA.Red,    // Mars
+            ColorRGBA.Brown,  // Jupiter
+            ColorRGBA.Orange, // Saturn
+            ColorRGBA.Cyan,   // Uranus
+            ColorRGBA.Magenta // Neptune
         };
 
         int index = 0;
@@ -131,6 +136,13 @@ public class SunAndMoon extends SimpleApplication {
             index++;
         }
 
+        int keyCode = KeyInput.KEY_1;
+        for (String name : planets.keySet()) {
+            String actionName = "Follow_" + name;
+            inputManager.addMapping(actionName, new KeyTrigger(keyCode));
+            inputManager.addListener(actionListener, actionName);
+            keyCode++;
+        }
 
         // Erde & Mond separat behandeln
         earthOrbitNode = planetOrbits.get("Earth");
@@ -161,16 +173,24 @@ public class SunAndMoon extends SimpleApplication {
     private final ActionListener actionListener = new ActionListener() {
         @Override
         public void onAction(String name, boolean isPressed, float tpf) {
-            if (name.equals("ToggleCameraFollow") && isPressed) {
-                cameraFollowEarth = !cameraFollowEarth;
-                if (cameraFollowEarth) {
-                    cam.setLocation(new Vector3f(earth.getLocalTranslation().x, 10, earth.getLocalTranslation().z - 10));
-                    cam.lookAt(earth.getLocalTranslation(), Vector3f.UNIT_Y);
-                    earth.setLocalScale(4f);
-                } else {
-                    cam.setLocation(new Vector3f(150, 70, -200));
-                    cam.lookAt(Vector3f.ZERO, Vector3f.UNIT_Y);
-                    earth.setLocalScale(1f);
+            if (isPressed) {
+                // Перевіряємо, чи це дія "ToggleCameraFollow"
+                if (name.startsWith("Follow_")) {
+                    String planetName = name.replace("Follow_", "");
+                    Geometry planet = planets.get(planetName);
+
+                    if (planet != null) {
+                        cameraFollowEarth = !cameraFollowEarth;
+                        if (cameraFollowEarth) {
+                            cam.setLocation(new Vector3f(planet.getLocalTranslation().x, 10, planet.getLocalTranslation().z - 10));
+                            cam.lookAt(planet.getLocalTranslation(), Vector3f.UNIT_Y);
+                            planet.setLocalScale(4f);
+                        } else {
+                            cam.setLocation(new Vector3f(150, 70, -200));
+                            cam.lookAt(Vector3f.ZERO, Vector3f.UNIT_Y);
+                            planet.setLocalScale(1f);
+                        }
+                    }
                 }
             }
         }
