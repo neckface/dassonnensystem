@@ -1,36 +1,44 @@
 package sunandmoon;
 
 import com.jme3.app.SimpleApplication;
-import com.jme3.font.BitmapFont;
-import com.jme3.font.BitmapText;
+import com.jme3.input.KeyInput;
+import com.jme3.input.controls.ActionListener;
+import com.jme3.input.controls.KeyTrigger;
+import com.jme3.light.DirectionalLight;
 import com.jme3.material.Material;
 import com.jme3.math.ColorRGBA;
+import com.jme3.math.FastMath;
 import com.jme3.math.Quaternion;
 import com.jme3.math.Vector3f;
 import com.jme3.renderer.RenderManager;
 import com.jme3.scene.Geometry;
 import com.jme3.scene.shape.Sphere;
+import com.jme3.scene.shape.Torus;
 import com.jme3.scene.Node;
 import com.jme3.system.AppSettings;
+import java.util.LinkedHashMap;
 
-/**
- * This is the Main Class of your Game. It should boot up your game and do initial initialisation
- * Move your Logic into AppStates or Controls or other java classes
- */
 public class SunAndMoon extends SimpleApplication {
 
-    // da kann man globale Variablen hinzufüfgen
-    private float angle = 0;
-    private Node earthOrbitNode;
-    private Node nextPlanetOrbitNode;
-    private Node moonOrbitNode;
+    private float angleEarth = 0;
+    private float angleMoon = 0;
+    private boolean cameraFollowEarth = false;
 
-    // da startet unseres Programm
+    private Node earthOrbitNode;
+    private Geometry earth, moon;
+
+    private LinkedHashMap<String, Node> planetOrbits = new LinkedHashMap<>();
+    private LinkedHashMap<String, Geometry> planets = new LinkedHashMap<>();
+    private LinkedHashMap<String, Float> planetDistances = new LinkedHashMap<>();
+    private LinkedHashMap<String, Float> planetSpeeds = new LinkedHashMap<>();
+    private LinkedHashMap<String, Float> planetAngles = new LinkedHashMap<>();
+
     public static void main(String[] args) {
         SunAndMoon app = new SunAndMoon();
 
         AppSettings settings = new AppSettings(true);
-        settings.setResolution(1920, 1080);
+        settings.setResolution(1440, 940);
+        settings.setTitle("Sonnensystem-Simulation");
         app.setSettings(settings);
 
         app.start();
@@ -38,121 +46,183 @@ public class SunAndMoon extends SimpleApplication {
 
     @Override
     public void simpleInitApp() {
+        cam.setLocation(new Vector3f(150, 70, -200));
+        cam.lookAt(Vector3f.ZERO, Vector3f.UNIT_Y);
+        flyCam.setMoveSpeed(30);
 
-        // Kamera
-        cam.setLocation(new Vector3f(100, 100, -40));
-        cam.lookAt(new Vector3f(0, 0, 0), Vector3f.UNIT_Y);
-        flyCam.setMoveSpeed(25);
+        // Lichtquelle hinzufügen
+        DirectionalLight sunLight = new DirectionalLight();
+        sunLight.setDirection(new Vector3f(-1, -1, -1).normalizeLocal());
+        sunLight.setColor(ColorRGBA.White.mult(1.5f));
+        rootNode.addLight(sunLight);
 
-        // Sonne
-        Sphere s = new Sphere(100, 100, 5);
-        Geometry sun = new Geometry("Sun", s);
+        // Sonne erstellen
+        Sphere sunSphere = new Sphere(32, 32, 12f);
+        Geometry sun = new Geometry("Sun", sunSphere);
         Material sunMat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
         sunMat.setColor("Color", ColorRGBA.Yellow);
         sun.setMaterial(sunMat);
-        sun.setLocalTranslation(0, 0, 0);
         rootNode.attachChild(sun);
-        earthOrbitNode = new Node("EarthOrbit");
 
-        rootNode.attachChild(earthOrbitNode);
-        Node earthNode = new Node("EarthNode");
+        // Planeten-Informationen (Abstand von der Sonne & Umlaufzeit)
+        planetDistances.put("Mercury", 15f);
+        planetDistances.put("Venus", 22f);
+        planetDistances.put("Earth", 30f);
+        planetDistances.put("Mars", 40f);
+        planetDistances.put("Jupiter", 70f);
+        planetDistances.put("Saturn", 90f);
+        planetDistances.put("Uranus", 110f);
+        planetDistances.put("Neptune", 130f);
 
-        // Erde
-        Sphere e = new Sphere(100, 100, 1);
-        Geometry earthGeo = new Geometry("Earth", e);
-        Material earthMat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
-        earthMat.setColor("Color", ColorRGBA.Blue);
-        earthGeo.setMaterial(earthMat);
-        earthNode.attachChild(earthGeo);
-        earthNode.setLocalTranslation(20, 0, 0);
-        earthOrbitNode.attachChild(earthNode);
+        float timeScale = 1f/12f;
+        planetSpeeds.put("Mercury", FastMath.TWO_PI / (88f * timeScale));
+        planetSpeeds.put("Venus", FastMath.TWO_PI / (225f * timeScale));
+        planetSpeeds.put("Earth", FastMath.TWO_PI / (365f * timeScale));
+        planetSpeeds.put("Mars", FastMath.TWO_PI / (687f * timeScale));
+        planetSpeeds.put("Jupiter", FastMath.TWO_PI / (4333f * timeScale));
+        planetSpeeds.put("Saturn", FastMath.TWO_PI / (10759f * timeScale));
+        planetSpeeds.put("Uranus", FastMath.TWO_PI / (30687f * timeScale));
+        planetSpeeds.put("Neptune", FastMath.TWO_PI / (60190f * timeScale));
 
-        moonOrbitNode = new Node("MoonOrbit");
-        earthNode.attachChild(moonOrbitNode);
+        // Додаємо початкові кути обертання для кожної планети
+        planetAngles.put("Mercury", 0f);
+        planetAngles.put("Venus", FastMath.PI / 4);  // 45 градусів
+        planetAngles.put("Earth", FastMath.PI / 2);  // 90 градусів
+        planetAngles.put("Mars", 3 * FastMath.PI / 4); // 135 градусів
+        planetAngles.put("Jupiter", FastMath.PI);    // 180 градусів
+        planetAngles.put("Saturn", 5 * FastMath.PI / 4); // 225 градусів
+        planetAngles.put("Uranus", 3 * FastMath.PI / 2); // 270 градусів
+        planetAngles.put("Neptune", 7 * FastMath.PI / 4); // 315 градусів
 
-        // Mond
-        Sphere m = new Sphere(100, 100, 0.5f);
-        Geometry moonGeo = new Geometry("Moon", m);
+        ColorRGBA[] planetColors = {
+            ColorRGBA.Gray,   // Mercury
+            ColorRGBA.Orange, // Venus
+            ColorRGBA.Blue,   // Earth
+            ColorRGBA.Red,    // Mars
+            ColorRGBA.Brown,  // Jupiter
+            ColorRGBA.Orange, // Saturn
+            ColorRGBA.Cyan,   // Uranus
+            ColorRGBA.Magenta // Neptune
+        };
+
+        int index = 0;
+        for (String name : planetDistances.keySet()) {
+            Node orbitNode = new Node(name + "Orbit");
+            rootNode.attachChild(orbitNode);
+            addOrbit(planetDistances.get(name), planetColors[index], rootNode);
+
+            float radius;
+            switch (name) {
+                case "Mercury": radius = 0.04f; break;
+                case "Venus":   radius = 0.10f; break;
+                case "Earth":   radius = 0.11f; break;
+                case "Mars":    radius = 0.06f; break;
+                case "Jupiter": radius = 1.20f; break;
+                case "Saturn":  radius = 1.00f; break;
+                case "Uranus":  radius = 0.44f; break;
+                case "Neptune": radius = 0.42f; break;
+                default:        radius = 0.11f; break; // За замовчуванням
+            }
+
+            Sphere sphere = new Sphere(32, 32, radius);
+            Geometry planet = new Geometry(name, sphere);
+            Material mat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
+            mat.setColor("Color", planetColors[index]);
+            planet.setMaterial(mat);
+            planets.put(name, planet);
+            planetOrbits.put(name, orbitNode);
+            orbitNode.attachChild(planet);
+
+            index++;
+        }
+
+        int keyCode = KeyInput.KEY_1;
+        for (String name : planets.keySet()) {
+            String actionName = "Follow_" + name;
+            inputManager.addMapping(actionName, new KeyTrigger(keyCode));
+            inputManager.addListener(actionListener, actionName);
+            keyCode++;
+        }
+
+        // Erde & Mond separat behandeln
+        earthOrbitNode = planetOrbits.get("Earth");
+        earth = planets.get("Earth");
+
+        Sphere moonSphere = new Sphere(32, 32, 0.03f);
+        moon = new Geometry("Moon", moonSphere);
         Material moonMat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
         moonMat.setColor("Color", ColorRGBA.White);
-        moonGeo.setMaterial(moonMat);
-        moonGeo.setLocalTranslation(5, 0, 0);
-        moonOrbitNode.attachChild(moonGeo);
+        moon.setMaterial(moonMat);
+        rootNode.attachChild(moon);
 
-
-        // nextplanet
-        nextPlanetOrbitNode = new Node("NextPlanetOrbit");
-        rootNode.attachChild(nextPlanetOrbitNode);
-        Sphere np = new Sphere(100,100,3);
-        Geometry nextPlanet = new Geometry("NextPlanet", np);
-        Material nextPlanetMat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
-        nextPlanetMat.setColor("Color", ColorRGBA.Green);
-        nextPlanet.setMaterial(nextPlanetMat);
-        nextPlanet.setLocalTranslation(40, 0, 0);
-        nextPlanetOrbitNode.attachChild(nextPlanet);
-
-        initUI();
+        // Kamera-Follow aktivieren
+        inputManager.addMapping("ToggleCameraFollow", new KeyTrigger(KeyInput.KEY_E));
+        inputManager.addListener(actionListener, "ToggleCameraFollow");
     }
 
-    // da geht's um die Bewegungen und Animationen
+    private void addOrbit(float radius, ColorRGBA color, Node parentNode) {
+        Torus orbitShape = new Torus(100, 2, 0.02f, radius);
+        Geometry orbit = new Geometry("Orbit", orbitShape);
+        Material orbitMat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
+        orbitMat.setColor("Color", color.mult(0.5f));
+        orbit.setMaterial(orbitMat);
+        orbit.rotate(FastMath.HALF_PI, 0, 0);
+        parentNode.attachChild(orbit);
+    }
+
+    private final ActionListener actionListener = new ActionListener() {
+        @Override
+        public void onAction(String name, boolean isPressed, float tpf) {
+            if (isPressed) {
+                // Перевіряємо, чи це дія "ToggleCameraFollow"
+                if (name.startsWith("Follow_")) {
+                    String planetName = name.replace("Follow_", "");
+                    Geometry planet = planets.get(planetName);
+
+                    if (planet != null) {
+                        cameraFollowEarth = !cameraFollowEarth;
+                        if (cameraFollowEarth) {
+                            cam.setLocation(new Vector3f(planet.getLocalTranslation().x, 10, planet.getLocalTranslation().z - 10));
+                            cam.lookAt(planet.getLocalTranslation(), Vector3f.UNIT_Y);
+                            planet.setLocalScale(4f);
+                        } else {
+                            cam.setLocation(new Vector3f(150, 70, -200));
+                            cam.lookAt(Vector3f.ZERO, Vector3f.UNIT_Y);
+                            planet.setLocalScale(1f);
+                        }
+                    }
+                }
+            }
+        }
+    };
+
     @Override
     public void simpleUpdate(float tpf) {
-        angle += tpf; // time pro frame (simple update)
-        // die Bewegung unserer Erde
-        Quaternion rotation = new Quaternion(); // um die Objekte zu bewegen
-        rotation.fromAngleAxis(angle, Vector3f.UNIT_Y); //angle ist die Geschwindigkeit und dreht sich um Y Axis
-        earthOrbitNode.setLocalRotation(rotation);
+        for (String name : planets.keySet()) {
+            float speed = planetSpeeds.get(name);
+            float distance = planetDistances.get(name);
 
-        // die Bewegung naechster Planet
-        Quaternion rotationNextPlanet = new Quaternion();
-        rotationNextPlanet.fromAngleAxis(angle * 0.5f, Vector3f.UNIT_Y);
-        nextPlanetOrbitNode.setLocalRotation(rotationNextPlanet);
+            // Оновлюємо кут планети (окремо для кожної)
+            float currentAngle = planetAngles.get(name);
+            currentAngle += speed * tpf;
+            planetAngles.put(name, currentAngle);
 
-        // Mondbewegung um die Erde
-        Quaternion rotationMoon = new Quaternion();
-        rotationMoon.fromAngleAxis(angle * 0.3f, Vector3f.UNIT_Y); // Mond rotiert schneller als Erde
+            // Позиція планети по орбіті навколо Сонця
+            float x = distance * FastMath.cos(currentAngle);
+            float z = distance * FastMath.sin(currentAngle);
 
-        // Mond bewegt sich relativ zur Erde auf einer Umlaufbahn
-        //Vector3f moonPosition = rotationMoon.mult(new Vector3f(10, 5, 0)); // Abstand beibehalten
-        //moonOrbitNode.setLocalTranslation(moonPosition);
+            // Оновлюємо позицію планети
+            Geometry planet = planets.get(name);
+            planet.setLocalTranslation(x, 0, z);
+        }
+
+        // Рух Місяця навколо Землі
+        angleMoon += FastMath.TWO_PI / 27.32f * tpf;  // 27.32 дні - орбітальний період Місяця
+        float moonX = earth.getLocalTranslation().x + 0.8f * FastMath.cos(angleMoon);
+        float moonZ = earth.getLocalTranslation().z + 0.8f * FastMath.sin(angleMoon);
+        moon.setLocalTranslation(moonX, 0, moonZ);
     }
 
-    // keine Ahnung, irgendwelche Scheiders Grafiks und so
     @Override
-    public void simpleRender(RenderManager rm) {
-
-    }
-
-    private void initUI() {
-        // Lade das Standard-Font
-        BitmapFont guiFont = assetManager.loadFont("Interface/Fonts/Default.fnt");
-
-        // ----- Buttons (als BitmapText, nur zur Anzeige) -----
-        // Button "Start"
-        BitmapText btnStart = new BitmapText(guiFont, false);
-        btnStart.setText("[ Start ]");
-        btnStart.setLocalTranslation(10, cam.getHeight() - 50, 0);
-        guiNode.attachChild(btnStart);
-
-        // Button "Stop"
-        BitmapText btnStop = new BitmapText(guiFont, false);
-        btnStop.setText("[ Stop ]");
-        btnStop.setLocalTranslation(10, cam.getHeight() - 80, 0);
-        guiNode.attachChild(btnStop);
-
-        // Button "Reset"
-        BitmapText btnReset = new BitmapText(guiFont, false);
-        btnReset.setText("[ Reset ]");
-        btnReset.setLocalTranslation(10, cam.getHeight() - 110, 0);
-        guiNode.attachChild(btnReset);
-
-        // ----- Kalender oben rechts -----
-        // Erzeuge einen String mit dem aktuellen Datum
-        String currentDate = java.time.LocalDate.now().toString(); // z.B. "2025-03-18"
-        BitmapText calendar = new BitmapText(guiFont, false);
-        calendar.setText("Kalender: " + currentDate);
-        // Positioniere den Kalender oben rechts; berechne die X-Position anhand der Textbreite
-        calendar.setLocalTranslation(cam.getWidth() - calendar.getLineWidth() - 10, cam.getHeight() - 10, 0);
-        guiNode.attachChild(calendar);
-    }
+    public void simpleRender(RenderManager rm) {}
 }
