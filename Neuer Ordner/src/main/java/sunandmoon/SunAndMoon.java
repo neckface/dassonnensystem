@@ -64,9 +64,11 @@ public class SunAndMoon extends SimpleApplication {
         sun.setMaterial(sunMat);
         rootNode.attachChild(sun);
 
+
+
         // Planeten-Informationen (Abstand von der Sonne & Umlaufzeit)
-        planetDistances.put("Mercury", 15f);
-        planetDistances.put("Venus", 22f);
+        planetDistances.put("Mercury", 15f + 12f + 0.04f);
+        planetDistances.put("Venus", 22f );
         planetDistances.put("Earth", 30f);
         planetDistances.put("Mars", 40f);
         planetDistances.put("Jupiter", 70f);
@@ -74,15 +76,16 @@ public class SunAndMoon extends SimpleApplication {
         planetDistances.put("Uranus", 110f);
         planetDistances.put("Neptune", 130f);
 
-        float timeScale = 1f/12f;
-        planetSpeeds.put("Mercury", FastMath.TWO_PI / (88f * timeScale));
-        planetSpeeds.put("Venus", FastMath.TWO_PI / (225f * timeScale));
-        planetSpeeds.put("Earth", FastMath.TWO_PI / (365f * timeScale));
-        planetSpeeds.put("Mars", FastMath.TWO_PI / (687f * timeScale));
-        planetSpeeds.put("Jupiter", FastMath.TWO_PI / (4333f * timeScale));
-        planetSpeeds.put("Saturn", FastMath.TWO_PI / (10759f * timeScale));
-        planetSpeeds.put("Uranus", FastMath.TWO_PI / (30687f * timeScale));
-        planetSpeeds.put("Neptune", FastMath.TWO_PI / (60190f * timeScale));
+
+        planetSpeeds.put("Mercury", FastMath.TWO_PI / (88f * SECONDS_PER_SIM_DAY));
+        planetSpeeds.put("Venus", FastMath.TWO_PI / (225f * SECONDS_PER_SIM_DAY));
+       // planetSpeeds.put("Earth", FastMath.TWO_PI / ((1f / 1440) * SECONDS_PER_SIM_DAY));
+        planetSpeeds.put("Earth", FastMath.TWO_PI / (365f * SECONDS_PER_SIM_DAY));
+        planetSpeeds.put("Mars", FastMath.TWO_PI / (687f * SECONDS_PER_SIM_DAY));
+        planetSpeeds.put("Jupiter", FastMath.TWO_PI / (4333f * SECONDS_PER_SIM_DAY));
+        planetSpeeds.put("Saturn", FastMath.TWO_PI / (10759f * SECONDS_PER_SIM_DAY));
+        planetSpeeds.put("Uranus", FastMath.TWO_PI / (30687f * SECONDS_PER_SIM_DAY));
+        planetSpeeds.put("Neptune", FastMath.TWO_PI / (60190f * SECONDS_PER_SIM_DAY));
 
         // Додаємо початкові кути обертання для кожної планети
         planetAngles.put("Mercury", 0f);
@@ -196,8 +199,44 @@ public class SunAndMoon extends SimpleApplication {
         }
     };
 
+
+    /*
+        tEST
+
+        sekunden = tag 86400
+         */
+
+
+    float zeit;
+    float simulationTime = 0f;
+    // 86400f = sekunden tag = 24*60*60; 1440f = 24*60; 365 Tage im Jahr
+    //float SECONDS_PER_SIM_DAY = (86400f / 1440f) * (1f/365f);
+    float SECONDS_PER_SIM_DAY = 60f/365f; //Ein Erdenumlauf in einer Minute
+    float ECHTZEIT_UMLAUF = 86400; //Das ergibt das ein Simulationsumlauf genau so lange dauert wie in echt also ein Jahr
+
+
+    /*
+     *
+     * */
+
+
+    public float zeitVerstellen(){
+
+
+
+
+        return 1;
+    }
+
+
+
     @Override
     public void simpleUpdate(float tpf) {
+
+
+        simulationTime += tpf;
+        float simulationDays = simulationTime / SECONDS_PER_SIM_DAY;
+
         for (String name : planets.keySet()) {
             float speed = planetSpeeds.get(name);
             float distance = planetDistances.get(name);
