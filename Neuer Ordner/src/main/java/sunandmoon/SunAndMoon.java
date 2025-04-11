@@ -67,14 +67,14 @@ public class SunAndMoon extends SimpleApplication {
 
 
         // Planeten-Informationen (Abstand von der Sonne & Umlaufzeit)
-        planetDistances.put("Mercury", 15f + 12f + 0.04f);
-        planetDistances.put("Venus", 22f );
-        planetDistances.put("Earth", 30f);
-        planetDistances.put("Mars", 40f);
-        planetDistances.put("Jupiter", 70f);
-        planetDistances.put("Saturn", 90f);
-        planetDistances.put("Uranus", 110f);
-        planetDistances.put("Neptune", 130f);
+        planetDistances.put("Mercury", 15f + sunSphere.radius + 0.04f );
+        planetDistances.put("Venus", 22f + sunSphere.radius + 0.10f);
+        planetDistances.put("Earth", 30f + sunSphere.radius + 0.11f);
+        planetDistances.put("Mars", 40f + sunSphere.radius + 0.06f);
+        planetDistances.put("Jupiter", 70f + sunSphere.radius + 1.20f);
+        planetDistances.put("Saturn", 90f + sunSphere.radius + 1.00f);
+        planetDistances.put("Uranus", 110f + sunSphere.radius + 0.44f);
+        planetDistances.put("Neptune", 130f + sunSphere.radius + 0.42f);
 
 
         planetSpeeds.put("Mercury", FastMath.TWO_PI / (88f * SECONDS_PER_SIM_DAY));
@@ -201,7 +201,7 @@ public class SunAndMoon extends SimpleApplication {
 
 
     /*
-        tEST
+        TEST
 
         sekunden = tag 86400
          */
