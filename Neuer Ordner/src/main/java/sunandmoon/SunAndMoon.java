@@ -1,5 +1,9 @@
 package sunandmoon;
 
+import com.jme3.font.BitmapText;
+
+
+
 import com.jme3.app.SimpleApplication;
 import com.jme3.input.KeyInput;
 import com.jme3.input.controls.ActionListener;
@@ -19,6 +23,8 @@ import com.jme3.system.AppSettings;
 import java.util.LinkedHashMap;
 
 public class SunAndMoon extends SimpleApplication {
+    private BitmapText dayCounterText;
+
 
     private float angleEarth = 0;
     private float angleMoon = 0;
@@ -64,25 +70,34 @@ public class SunAndMoon extends SimpleApplication {
         sun.setMaterial(sunMat);
         rootNode.attachChild(sun);
 
-        // Planeten-Informationen (Abstand von der Sonne & Umlaufzeit)
-        planetDistances.put("Mercury", 15f);
-        planetDistances.put("Venus", 22f);
-        planetDistances.put("Earth", 30f);
-        planetDistances.put("Mars", 40f);
-        planetDistances.put("Jupiter", 70f);
-        planetDistances.put("Saturn", 90f);
-        planetDistances.put("Uranus", 110f);
-        planetDistances.put("Neptune", 130f);
+        guiNode.detachAllChildren();  // Bestehende GUI-Elemente entfernen, falls notwendig.
+        guiFont = assetManager.loadFont("Interface/Fonts/Default.fnt");
+        dayCounterText = new BitmapText(guiFont, false);
+        dayCounterText.setSize(guiFont.getCharSet().getRenderedSize());  // Standardgröße
+        dayCounterText.setColor(ColorRGBA.White);
+        // Positioniere den Text (10, Höhe - 10 vom oberen Rand)
+        dayCounterText.setLocalTranslation(10, settings.getHeight() - 10, 0);
+        guiNode.attachChild(dayCounterText);
 
-        float timeScale = 1f/12f;
-        planetSpeeds.put("Mercury", FastMath.TWO_PI / (88f * timeScale));
-        planetSpeeds.put("Venus", FastMath.TWO_PI / (225f * timeScale));
-        planetSpeeds.put("Earth", FastMath.TWO_PI / (365f * timeScale));
-        planetSpeeds.put("Mars", FastMath.TWO_PI / (687f * timeScale));
-        planetSpeeds.put("Jupiter", FastMath.TWO_PI / (4333f * timeScale));
-        planetSpeeds.put("Saturn", FastMath.TWO_PI / (10759f * timeScale));
-        planetSpeeds.put("Uranus", FastMath.TWO_PI / (30687f * timeScale));
-        planetSpeeds.put("Neptune", FastMath.TWO_PI / (60190f * timeScale));
+        // Planeten-Informationen (Abstand von der Sonne & Umlaufzeit)
+        planetDistances.put("Mercury", 15f + sunSphere.radius + 0.04f);
+        planetDistances.put("Venus", 22f + sunSphere.radius + 0.10f);
+        planetDistances.put("Earth", 30f + sunSphere.radius + 0.11f);
+        planetDistances.put("Mars", 40f + sunSphere.radius + 0.06f);
+        planetDistances.put("Jupiter", 70f + sunSphere.radius + 1.20f);
+        planetDistances.put("Saturn", 90f + sunSphere.radius + 1.00f);
+        planetDistances.put("Uranus", 110f + sunSphere.radius + 0.44f);
+        planetDistances.put("Neptune", 130f + sunSphere.radius + 0.42f);
+
+        // intialisiere planeten mit timescale => 1jahr Simu = 1Minute real life
+        planetSpeeds.put("Mercury", FastMath.TWO_PI / (88f * eineMinuteGleich1JahrSimu));
+        planetSpeeds.put("Venus", FastMath.TWO_PI / (225f * eineMinuteGleich1JahrSimu));
+        planetSpeeds.put("Earth", FastMath.TWO_PI / (365f * eineMinuteGleich1JahrSimu));
+        planetSpeeds.put("Mars", FastMath.TWO_PI / (687f * eineMinuteGleich1JahrSimu));
+        planetSpeeds.put("Jupiter", FastMath.TWO_PI / (4333f * eineMinuteGleich1JahrSimu));
+        planetSpeeds.put("Saturn", FastMath.TWO_PI / (10759f * eineMinuteGleich1JahrSimu));
+        planetSpeeds.put("Uranus", FastMath.TWO_PI / (30687f * eineMinuteGleich1JahrSimu));
+        planetSpeeds.put("Neptune", FastMath.TWO_PI / (60190f * eineMinuteGleich1JahrSimu));
 
         // Додаємо початкові кути обертання для кожної планети
         planetAngles.put("Mercury", 0f);
@@ -196,8 +211,70 @@ public class SunAndMoon extends SimpleApplication {
         }
     };
 
+
+    //globale variable um die tage zu counten
+    long Tag = 0;
+    // Globale Variable zum Akkumulieren der Simulationszeit (in Sekunden):
+    float simTimeAccumulator = 0f;
+
+
+
+    // falls ich dummbatz vergesse
+    // 86400f = sekunden tag = 24*60*60; 1440f = 24*60; 365 Tage im Jahr
+    // float SECONDS_PER_SIM_DAY = 60f/365f; //Ein Erdenumlauf in einer Minute
+
+
+    // Nutze diese Zeiten um simu zu verschnelleren bzw. zu verlangsamen. Kannst beliebig hinzufügen oder entferen,denke die reichen
+    float eineMinuteGleich1JahrSimu = (86400f / 1440f) * (1f/365f); //Ein Erdenumlauf um die Sonne in einer Minute
+    float einJahrSimuGelich30Sekunden = 30f/365f; //(86400f / (1440f * 2f)) * (1f/365f);
+    float einTagGleich1JahrSimu =  86400f/365f; // 1 echtzeit tag = 1 jahr simu
+    float echtZeit =   86400f;//Echtzeitt
+
+
+    // intialisiere timescale => 1jahr Simu = 1Minute real life || verändere diese Variable um Timescale zu ändern, damit tage richtig gezählt werdne
+    float currentTimeScale = eineMinuteGleich1JahrSimu;
+
+
+
+
+
+    // Kp wie du das brauchst fürs interface bro.
+    public void changeTimeScaleSimu( float neuerTimescale) {
+                // setze currentTimeScale auf den neuen Wert .z.B. echtZeit, damit tage vernünftig getracked werden
+                currentTimeScale = neuerTimescale;
+
+                // konnte nicht testen ob dieser Part richtig funktioniert, viel glück
+                planetSpeeds.put("Mercury", FastMath.TWO_PI / (88f * neuerTimescale));
+                planetSpeeds.put("Venus", FastMath.TWO_PI / (225f * neuerTimescale));
+                planetSpeeds.put("Earth", FastMath.TWO_PI / (365f * neuerTimescale));
+                planetSpeeds.put("Mars", FastMath.TWO_PI / (687f * neuerTimescale));
+                planetSpeeds.put("Jupiter", FastMath.TWO_PI / (4333f * neuerTimescale));
+                planetSpeeds.put("Saturn", FastMath.TWO_PI / (10759f * neuerTimescale));
+                planetSpeeds.put("Uranus", FastMath.TWO_PI / (30687f * neuerTimescale));
+                planetSpeeds.put("Neptune", FastMath.TWO_PI / (60190f * neuerTimescale));
+
+    }
+
+
+
     @Override
     public void simpleUpdate(float tpf) {
+
+// Berücksichtige den Zeitfaktor in der Zeitsimulation:
+            // zum tage zählen
+        simTimeAccumulator += tpf;
+
+        // Überprüfen, ob ein ganzer Simulations-Tag vergangen ist
+        while (simTimeAccumulator >= currentTimeScale) {
+            Tag++;
+            simTimeAccumulator -= currentTimeScale;
+            System.out.println("Simulations-Tag: " + Tag);
+        }
+        // tage zählen ende
+
+// Aktualisiere den GUI-Text, damit immer der aktuelle Simulations-Tag angezeigt wird
+        dayCounterText.setText("Simulations-Tag: " + Tag);
+
         for (String name : planets.keySet()) {
             float speed = planetSpeeds.get(name);
             float distance = planetDistances.get(name);
