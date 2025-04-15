@@ -1,5 +1,6 @@
 package sunandmoon;
 
+import com.jme3.asset.AssetNotFoundException;
 import com.jme3.font.BitmapText;
 
 
@@ -10,22 +11,23 @@ import com.jme3.input.controls.ActionListener;
 import com.jme3.input.controls.KeyTrigger;
 import com.jme3.light.DirectionalLight;
 import com.jme3.material.Material;
-import com.jme3.math.ColorRGBA;
-import com.jme3.math.FastMath;
-import com.jme3.math.Quaternion;
-import com.jme3.math.Vector3f;
+import com.jme3.math.*;
 import com.jme3.renderer.RenderManager;
+import com.jme3.renderer.queue.RenderQueue;
 import com.jme3.scene.Geometry;
+import com.jme3.scene.Spatial;
 import com.jme3.scene.shape.Sphere;
 import com.jme3.scene.shape.Torus;
 import com.jme3.scene.Node;
 import com.jme3.system.AppSettings;
+import com.jme3.texture.Texture;
+
 import java.util.LinkedHashMap;
 
 public class SunAndMoon extends SimpleApplication {
     private BitmapText dayCounterText;
-
-
+    boolean isPaused = false;
+    // x y 0, x 0 z
     private float angleEarth = 0;
     private float angleMoon = 0;
     private boolean cameraFollowEarth = false;
@@ -52,6 +54,10 @@ public class SunAndMoon extends SimpleApplication {
 
     @Override
     public void simpleInitApp() {
+
+
+
+
         cam.setLocation(new Vector3f(150, 70, -200));
         cam.lookAt(Vector3f.ZERO, Vector3f.UNIT_Y);
         flyCam.setMoveSpeed(30);
@@ -66,9 +72,10 @@ public class SunAndMoon extends SimpleApplication {
         Sphere sunSphere = new Sphere(32, 32, 12f);
         Geometry sun = new Geometry("Sun", sunSphere);
         Material sunMat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
-        sunMat.setColor("Color", ColorRGBA.Yellow);
+        sunMat.setTexture("ColorMap", assetManager.loadTexture("Textures/Sun.jpg"));
         sun.setMaterial(sunMat);
         rootNode.attachChild(sun);
+
 
         guiNode.detachAllChildren();  // Bestehende GUI-Elemente entfernen, falls notwendig.
         guiFont = assetManager.loadFont("Interface/Fonts/Default.fnt");
@@ -88,6 +95,7 @@ public class SunAndMoon extends SimpleApplication {
         planetDistances.put("Saturn", 90f + sunSphere.radius + 1.00f);
         planetDistances.put("Uranus", 110f + sunSphere.radius + 0.44f);
         planetDistances.put("Neptune", 130f + sunSphere.radius + 0.42f);
+
 
         // intialisiere planeten mit timescale => 1jahr Simu = 1Minute real life
         planetSpeeds.put("Mercury", FastMath.TWO_PI / (88f * eineMinuteGleich1JahrSimu));
@@ -119,6 +127,9 @@ public class SunAndMoon extends SimpleApplication {
             ColorRGBA.Cyan,   // Uranus
             ColorRGBA.Magenta // Neptune
         };
+        sun.rotate(90, 250, 0);
+
+
 
         int index = 0;
         for (String name : planetDistances.keySet()) {
@@ -142,7 +153,14 @@ public class SunAndMoon extends SimpleApplication {
             Sphere sphere = new Sphere(32, 32, radius);
             Geometry planet = new Geometry(name, sphere);
             Material mat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
-            mat.setColor("Color", planetColors[index]);
+
+            try {
+                Texture texture = assetManager.loadTexture("Textures/" + name + ".jpg");
+                mat.setTexture("ColorMap", texture);
+            } catch (AssetNotFoundException e) {
+                mat.setColor("Color", planetColors[index]);
+            }
+
             planet.setMaterial(mat);
             planets.put(name, planet);
             planetOrbits.put(name, orbitNode);
@@ -166,14 +184,19 @@ public class SunAndMoon extends SimpleApplication {
         Sphere moonSphere = new Sphere(32, 32, 0.03f);
         moon = new Geometry("Moon", moonSphere);
         Material moonMat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
-        moonMat.setColor("Color", ColorRGBA.White);
+        moonMat.setTexture("ColorMap", assetManager.loadTexture("Textures/Moon.jpg"));
         moon.setMaterial(moonMat);
         rootNode.attachChild(moon);
 
         // Kamera-Follow aktivieren
         inputManager.addMapping("ToggleCameraFollow", new KeyTrigger(KeyInput.KEY_E));
         inputManager.addListener(actionListener, "ToggleCameraFollow");
+
+        inputManager.addMapping("Pause", new KeyTrigger(KeyInput.KEY_SPACE));
+        inputManager.addListener(actionListener, "Pause");
+
     }
+
 
     private void addOrbit(float radius, ColorRGBA color, Node parentNode) {
         Torus orbitShape = new Torus(100, 2, 0.02f, radius);
@@ -188,6 +211,10 @@ public class SunAndMoon extends SimpleApplication {
     private final ActionListener actionListener = new ActionListener() {
         @Override
         public void onAction(String name, boolean isPressed, float tpf) {
+            if (name.equals("Pause") && isPressed) {
+                isPaused = !isPaused;
+                System.out.println(isPaused ? "Simulation pausiert" : "Simulation läuft weiter");
+            }
             if (isPressed) {
                 // Перевіряємо, чи це дія "ToggleCameraFollow"
                 if (name.startsWith("Follow_")) {
@@ -214,6 +241,16 @@ public class SunAndMoon extends SimpleApplication {
 
     //globale variable um die tage zu counten
     long Tag = 0;
+    int monat = 0; // Januar = 0
+    int jahr = 2025;
+
+    String[] monatNamen = {
+            "Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"
+    };
+
+    int[] tageProMonat = {
+            31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31
+    };
     // Globale Variable zum Akkumulieren der Simulationszeit (in Sekunden):
     float simTimeAccumulator = 0f;
 
@@ -259,7 +296,7 @@ public class SunAndMoon extends SimpleApplication {
 
     @Override
     public void simpleUpdate(float tpf) {
-
+        if (!isPaused) {
 // Berücksichtige den Zeitfaktor in der Zeitsimulation:
             // zum tage zählen
         simTimeAccumulator += tpf;
@@ -268,12 +305,25 @@ public class SunAndMoon extends SimpleApplication {
         while (simTimeAccumulator >= currentTimeScale) {
             Tag++;
             simTimeAccumulator -= currentTimeScale;
-            System.out.println("Simulations-Tag: " + Tag);
+            tageProMonat[1] = (jahr % 4 == 0 && (jahr % 100 != 0 || jahr % 400 == 0)) ? 29 : 28; // Schaltjahr berücksichtigen
+
+            if (Tag > tageProMonat[monat]) {
+                Tag = 1;
+                monat++;
+                if (monat >= 12) {
+                    monat = 0;
+                    jahr++;
+                }
+            }
+
+            String datumText = Tag + ". " + monatNamen[monat] + " " + jahr;
+            System.out.println("Datum: " + datumText);
+            dayCounterText.setText(datumText);
         }
-        // tage zählen ende
+        // tage zählen ende Kalendar
 
 // Aktualisiere den GUI-Text, damit immer der aktuelle Simulations-Tag angezeigt wird
-        dayCounterText.setText("Simulations-Tag: " + Tag);
+
 
         for (String name : planets.keySet()) {
             float speed = planetSpeeds.get(name);
@@ -298,6 +348,7 @@ public class SunAndMoon extends SimpleApplication {
         float moonX = earth.getLocalTranslation().x + 0.8f * FastMath.cos(angleMoon);
         float moonZ = earth.getLocalTranslation().z + 0.8f * FastMath.sin(angleMoon);
         moon.setLocalTranslation(moonX, 0, moonZ);
+    }
     }
 
     @Override
