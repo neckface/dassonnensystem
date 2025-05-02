@@ -44,6 +44,8 @@ dependencies {
     implementation 'org.jmonkeyengine:jme3-jbullet:' + jmonkeyengineVersion
     runtimeOnly 'org.jmonkeyengine:jme3-lwjgl3:' + jmonkeyengineVersion
 
+    implementation 'org.codehaus.groovy:groovy-all:3.0.18'
+
     implementation 'com.simsilica:lemur:1.16.0'
     implementation 'com.simsilica:lemur-proto:1.13.0'
 }
