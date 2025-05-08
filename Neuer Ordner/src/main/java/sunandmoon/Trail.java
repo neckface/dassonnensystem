@@ -22,6 +22,7 @@ public class Trail {
     private float trailTimer = 0f;
     private final int maxTrailPoints;
     private final float dropSpeed;
+    private boolean active = true;
 
     public Trail(Node rootNode, AssetManager assetManager, ColorRGBA color, float interval, int maxPoints, float dropSpeed) {
         this.rootNode = rootNode;
@@ -31,9 +32,17 @@ public class Trail {
         this.maxTrailPoints = maxPoints;
         this.dropSpeed = dropSpeed;
     }
+    public void setActive(boolean active) {
+        // wenn wir gerade ausgeschaltet werden, alle Punkte weg
+        if (this.active && !active) {
+            clear();
+        }
+        this.active = active;
+    }
 
 
     public void update(float tpf, Vector3f sourcePosition) {
+        if (!active) return;
         trailTimer += tpf*1000;
 
         if (trailTimer >= trailInterval) {

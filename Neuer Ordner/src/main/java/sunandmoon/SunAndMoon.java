@@ -29,19 +29,21 @@ public class SunAndMoon extends SimpleApplication {
 
     private BitmapText dayCounterText;
     boolean isPaused = false;
-    private boolean showTrails = true;
+    private boolean showTrails = false;
     // x y 0, x 0 z
     private float angleMoon = 0;
     private Geometry followPlanet = null;
     private Node earthOrbitNode;
     private Geometry earth, moon;
-
+    private Label infoLabel;
     private LinkedHashMap<String, Node> planetOrbits = new LinkedHashMap<>();
     private LinkedHashMap<String, Geometry> planets = new LinkedHashMap<>();
     private LinkedHashMap<String, Float> planetDistances = new LinkedHashMap<>();
     private LinkedHashMap<String, Float> planetSpeeds = new LinkedHashMap<>();
     private LinkedHashMap<String, Float> planetAngles = new LinkedHashMap<>();
     private LinkedHashMap<String, Trail> planetTrails = new LinkedHashMap<>();
+    private LinkedHashMap<String, String> planetInfo = new LinkedHashMap<>();
+
 
 
     public static void main(String[] args) {
@@ -133,13 +135,13 @@ public class SunAndMoon extends SimpleApplication {
 
 
         planetAngles.put("Mercury", 0f);
-        planetAngles.put("Venus", FastMath.PI / 4);  // 45 градусів
-        planetAngles.put("Earth", FastMath.PI / 2);  // 90 градусів
-        planetAngles.put("Mars", 3 * FastMath.PI / 4); // 135 градусів
-        planetAngles.put("Jupiter", FastMath.PI);    // 180 градусів
-        planetAngles.put("Saturn", 5 * FastMath.PI / 4); // 225 градусів
-        planetAngles.put("Uranus", 3 * FastMath.PI / 2); // 270 градусів
-        planetAngles.put("Neptune", 7 * FastMath.PI / 4); // 315 градусів
+        planetAngles.put("Venus", FastMath.PI / 4);
+        planetAngles.put("Earth", FastMath.PI / 2);
+        planetAngles.put("Mars", 3 * FastMath.PI / 4);
+        planetAngles.put("Jupiter", FastMath.PI);
+        planetAngles.put("Saturn", 5 * FastMath.PI / 4);
+        planetAngles.put("Uranus", 3 * FastMath.PI / 2);
+        planetAngles.put("Neptune", 7 * FastMath.PI / 4);
 
         ColorRGBA[] planetColors = {
             ColorRGBA.Gray,   // Mercury
@@ -152,6 +154,15 @@ public class SunAndMoon extends SimpleApplication {
             ColorRGBA.Magenta // Neptune
         };
         sun.rotate(90, 250, 0);
+        planetInfo.put("Mercury", "Merkur\nDer kleinste Planet und der sonnennächste Bewohner unseres Systems rast in gerade einmal 88 Erdtagen um die Sonne! Ohne nennenswerte Atmosphäre schwankt seine Oberflächentemperatur extrem: tagsüber können es fast 430 °C sein, nachts sinkt sie auf −180 °C. Die zerklüftete Oberfläche ist übersät mit Einschlagskratern und tiefen Klüften – Zeugen eines turbulenten Jugend-Acts aus Asteroiden- und Kometenbombardements.");
+        planetInfo.put("Venus", "Venus\nSchwesterplanet der Erde – aber unter einer dichten, ätzenden Wolkendecke herrscht ein Höllenklima: Oberflächendrücke zwanzig Mal so hoch wie auf der Erde und Temperaturen um 465 °C. Vulkanismus könnte die glühende Hülle regelmäßig neu speisen. In den Wolken verbergen sich außerdem noch rätselhafte Schwefelsäuretröpfchen und womöglich Spuren vergangener mikrobieller Lebensformen.");
+        planetInfo.put("Earth", "Erde\nEin blauer Juwel im All: 70 % ihrer Oberfläche sind von Wasser bedeckt, einzig bekanntes Lebensträger im Universum. Dank des Magnetfelds und der schützenden Atmosphäre bewahrt sie uns vor schädlicher Strahlung. Kontinente wandern, Berge wachsen und Ozeane verändern ihr Gesicht – unser Heimatplanet ist ein dynamisches Gleichgewicht.");
+        planetInfo.put("Mars", "Mars\nDer Rote Planet fasziniert mit rostfarbenem Staub und gigantischen Vulkanen wie dem Olympus Mons (dreimal so hoch wie der Mount Everest!). Ehemals wasserreiche Täler und ausgetrocknete Flussbetten deuten auf flüssiges Wasser in der Vergangenheit hin – heute lauert es verborgen als Eispol und Salzwasser-Lösungen in Untergrundreservoirs. Vielleicht ist er unser nächstes Ziel für bewohnbare Außenposten?\n" +
+                "\n");
+        planetInfo.put("Jupiter", "Jupiter\nDer König der Planeten: mit über 300 Erdmassen beherrscht er die äußeren Regionen. Sein wildes Wolkensystem formt den berühmten Großen Roten Fleck – ein Sturmtief seit Jahrhunderten. Aus Gestein, Eis und Gas bestehend, erzeugt Jupiter ein starkes Magnetfeld, das Asteroiden ablenkt und so als Schutzschild für die inneren Planeten dient.");
+        planetInfo.put("Saturn", "Saturn\nUnübersehbar sind seine atemberaubenden Ringe – Milliarden von Partikeln, von winzigen Staubkörnern bis zu Felsbrocken, eingekeilt in Bahnen aus Eis und Gestein. Darunter verbirgt sich ein Gasriese, dessen Windgeschwindigkeiten über 1.800 km/h erreichen können. Saturns größte Monde, besonders Titan mit seinem dichten Stickstoff-Meer, bieten spannende Einblicke in fremde Welten.");
+        planetInfo.put("Uranus", "Uranus\nDer „seitliche“ Planet rollt auf seiner Seite um die Sonne – seine Rotationsachse liegt fast in seiner Umlaufebene. Dieses ungewöhnliche Gefälle führt zu extremen Jahreszeiten: 21 Jahre lang strahlt ein Pol im steten Sonnenlicht, während der andere in 21 Jahre Nacht gehüllt ist. Das kalte Gasgemisch aus Wasser, Ammoniak und Methan verleiht ihm seine markant blassblaue Farbe.");
+        planetInfo.put("Neptune", "Neptun\nDer fernste Gasriese imponiert mit den kräftigsten Winden im Sonnensystem: bis zu 2.100 km/h fegen Stürme über seine eisigen Wolken. Seine tiefblaue Farbe entsteht durch Methan in der Atmosphäre. Neptun birgt außerdem eine geheime Wärmequelle, die ihn von innen heraus aufheizt – ein faszinierendes Rätsel für Planetologen.");
 
 
 
@@ -172,7 +183,7 @@ public class SunAndMoon extends SimpleApplication {
                 case "Saturn":  radius = 1.00f* multipl; break;
                 case "Uranus":  radius = 0.44f* multipl; break;
                 case "Neptune": radius = 0.42f* multipl; break;
-                default:        radius = 0.11f* multipl; break; // За замовчуванням
+                default:        radius = 0.11f* multipl; break;
             }
 
             Sphere sphere = new Sphere(32, 32, radius);
@@ -235,11 +246,15 @@ public class SunAndMoon extends SimpleApplication {
         guiNode.attachChild(hudTrials);
 
 
-        Button btnTrails = hudTrials.addChild(new Button("Trails: On"), 1, 0);
+        Button btnTrails = hudTrials.addChild(new Button("Trails On/Off"), 1, 0);
         btnTrails.addClickCommands((Button src) -> {
             showTrails = !showTrails;
             src.setText("Trails: " + (showTrails ? "On" : "Off"));
 
+            // Устанавливаем активность всех трейлов
+            for (Trail trail : planetTrails.values()) {
+                trail.setActive(showTrails);
+            }
         });
 
 
@@ -300,22 +315,44 @@ public class SunAndMoon extends SimpleApplication {
             Button b = camHud.addChild(new Button(name), col, row);
             b.setPreferredSize(new Vector3f(100, 40, 0));
             b.setInsets(new Insets3f(3f, 3f, 3f, 3f));
+            Container hudText = new Container(); // containers für Buttons
+            hudText.setLocalTranslation(1200, cam.getHeight() - 10, 0); // position des Hud
+            guiNode.attachChild(hudText);
             final String planetName = name;
             b.addClickCommands((Button src) -> {
-                actionListener.onAction("Follow_" + planetName, true, 0);
+                for (Trail trail : planetTrails.values()) {
+                    trail.setActive(showTrails);
+                    if (!showTrails) {
+                        trail.clear();    // alle vorhandenen Punkte entfernen
+                    }
+                }
+
+                    // follow-Toggle durchführen
+                    actionListener.onAction("Follow_" + planetName, true, 0);
+
+                    // je nach dem, ob wir jetzt folgen, Text setzen oder löschen
+                    if (followPlanet == planets.get(planetName)) {
+                        infoLabel.setText(planetInfo.get(planetName));
+                    } else {
+                        infoLabel.setText("");
+                    }
+
 
             });
-
             col++;
             if (col == 4) {
                 col = 0;
                 row++;
             }
-
-        cam.setLocation(new Vector3f(150, 70, -200));
-        cam.lookAt(Vector3f.ZERO, Vector3f.UNIT_Y);
-
-    }}
+            cam.setLocation(new Vector3f(150, 70, -200));
+            cam.lookAt(Vector3f.ZERO, Vector3f.UNIT_Y);
+        }
+        infoLabel = new Label("");
+        infoLabel.setFontSize(20);
+        infoLabel.setPreferredSize(new Vector3f(300, 200, 0));
+        infoLabel.setLocalTranslation(settings.getWidth() - 350, settings.getHeight() - 250, 0);
+        guiNode.attachChild(infoLabel);
+    }
 
 
     private Geometry addOrbit(float radius, ColorRGBA color, Node parentNode) {
@@ -333,6 +370,7 @@ public class SunAndMoon extends SimpleApplication {
 
         @Override
         public void onAction(String name, boolean isPressed, float tpf) {
+
             if (isPressed){
             if (name.equals("No_Clip")) {
                 flyCam.setMoveSpeed(100);
@@ -350,7 +388,6 @@ public class SunAndMoon extends SimpleApplication {
                 isPaused = !isPaused;
             }
             if (isPressed) {
-                // Перевіряємо, чи це дія "ToggleCameraFollow"
                 if (name.startsWith("Follow_")) {
                     String planetName = name.replace("Follow_", "");
                     Geometry planet = planets.get(planetName);
@@ -494,18 +531,17 @@ public class SunAndMoon extends SimpleApplication {
         }
 
 
-        angleMoon += FastMath.TWO_PI / 27.32f * tpf;  // 27.32 дні - орбітальний період Місяця
+        angleMoon += FastMath.TWO_PI / 27.32f * tpf;
         float moonX = earth.getLocalTranslation().x + 0.8f * FastMath.cos(angleMoon);
         float moonZ = earth.getLocalTranslation().z + 0.8f * FastMath.sin(angleMoon);
         moon.setLocalTranslation(moonX, 0, moonZ);
-        if (showTrails) {
-            for (String name : planets.keySet()) {
-                Trail trail = planetTrails.get(name);
-                if (trail != null) {
-                    trail.update(tpf, planets.get(name).getLocalTranslation());
+            if (showTrails) {
+                for (String name : planets.keySet()) {
+                    Trail trail = planetTrails.get(name);
+                    if (trail != null) {
+                        trail.update(tpf, planets.get(name).getLocalTranslation());
+                    }
                 }
-
-            }
             }
         }
     }
