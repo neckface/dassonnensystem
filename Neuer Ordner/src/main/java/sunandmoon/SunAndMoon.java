@@ -1,6 +1,8 @@
 package sunandmoon;
 
 import com.jme3.asset.AssetNotFoundException;
+import com.jme3.audio.AudioData;
+import com.jme3.audio.AudioNode;
 import com.jme3.font.BitmapText;
 import com.jme3.app.SimpleApplication;
 import com.jme3.input.KeyInput;
@@ -29,6 +31,7 @@ public class SunAndMoon extends SimpleApplication {
 
     private BitmapText dayCounterText;
     boolean isPaused = false;
+    boolean isMusicPaused = false;
     private boolean showTrails = false;
     // x y 0, x 0 z
     private float angleMoon = 0;
@@ -164,8 +167,6 @@ public class SunAndMoon extends SimpleApplication {
         planetInfo.put("Uranus", "Uranus\nDer „seitliche“ Planet rollt auf seiner Seite um die Sonne – seine Rotationsachse liegt fast in seiner Umlaufebene. Dieses ungewöhnliche Gefälle führt zu extremen Jahreszeiten: 21 Jahre lang strahlt ein Pol im steten Sonnenlicht, während der andere in 21 Jahre Nacht gehüllt ist. Das kalte Gasgemisch aus Wasser, Ammoniak und Methan verleiht ihm seine markant blassblaue Farbe.");
         planetInfo.put("Neptune", "Neptun\nDer fernste Gasriese imponiert mit den kräftigsten Winden im Sonnensystem: bis zu 2.100 km/h fegen Stürme über seine eisigen Wolken. Seine tiefblaue Farbe entsteht durch Methan in der Atmosphäre. Neptun birgt außerdem eine geheime Wärmequelle, die ihn von innen heraus aufheizt – ein faszinierendes Rätsel für Planetologen.");
 
-
-
         int index = 0;
         for (String name : planetDistances.keySet()) {
             Node orbitNode = new Node(name + "Orbit");
@@ -233,7 +234,12 @@ public class SunAndMoon extends SimpleApplication {
         inputManager.addMapping("Pause", new KeyTrigger(KeyInput.KEY_SPACE));
         inputManager.addListener(actionListener, "Pause");
 
-
+        AudioNode music = new AudioNode(assetManager, "Sounds/space3.wav", AudioData.DataType.Stream);
+        music.setLooping(true);
+        music.setPositional(false);
+        music.setDirectional(false);
+        music.setVolume(0.2f);
+        music.play();
 
         // INTERFACE INTERFACE INTERFACE INTERFACE INTERFACE INTERFACE INTERFACE INTERFACE
         // da initialisieren wir Lemur
@@ -246,17 +252,34 @@ public class SunAndMoon extends SimpleApplication {
         guiNode.attachChild(hudTrials);
 
 
+
         Button btnTrails = hudTrials.addChild(new Button("Trails On/Off"), 1, 0);
         btnTrails.addClickCommands((Button src) -> {
             showTrails = !showTrails;
             src.setText("Trails: " + (showTrails ? "On" : "Off"));
 
-            // Устанавливаем активность всех трейлов
+
             for (Trail trail : planetTrails.values()) {
                 trail.setActive(showTrails);
             }
         });
+// Music button
+        Container hudMusic = new Container();
+        hudMusic.setLocalTranslation(10, cam.getHeight() - 530, 0);
+        guiNode.attachChild(hudMusic);
+        Button btnMusic = hudMusic.addChild(new Button("Music On/Off"), 1, 0);
+        btnMusic.addClickCommands((Button src) -> {
+            btnMusic.setText("Music On/Off");
+            src.setText("Music: " + (isMusicPaused ? "On" : "Off"));
+            if (!isMusicPaused){
+                music.setVolume(0f);
+                isMusicPaused = true;
+            } else {
+                music.setVolume(0.2f);
+                isMusicPaused = false;
+            }
 
+        });
 
 
 
@@ -352,6 +375,8 @@ public class SunAndMoon extends SimpleApplication {
         infoLabel.setPreferredSize(new Vector3f(300, 200, 0));
         infoLabel.setLocalTranslation(settings.getWidth() - 350, settings.getHeight() - 250, 0);
         guiNode.attachChild(infoLabel);
+
+
     }
 
 
@@ -431,7 +456,6 @@ public class SunAndMoon extends SimpleApplication {
 
 
 
-    // falls ich dummbatz vergesse
     // 86400f = sekunden tag = 24*60*60; 1440f = 24*60; 365 Tage im Jahr
     // float SECONDS_PER_SIM_DAY = 60f/365f; //Ein Erdenumlauf in einer Minute
 
@@ -549,3 +573,15 @@ public class SunAndMoon extends SimpleApplication {
     @Override
     public void simpleRender(RenderManager rm) {}
 }
+/* QUELLEN
+
+    JMonkeyEngine Documentation - https://wiki.jmonkeyengine.org/docs/3.4/documentation.html
+    Lemur Documentation - https://jmonkeyengine-contributions.github.io/Lemur/javadoc/Lemur/allclasses-noframe.html
+    ChatGPT 4o (Trails wurden mit ChatGPT korriegiert, ein paar mathematische Korrekturen)
+    Texturen - https://www.solarsystemscope.com/textures/
+    Java Documentation - https://www.w3schools.com/java/default.asp
+
+
+    (C) Stanislav Zholob, Stefan Lehmann, Lukas Ochs, Akim Zdorovtsov
+
+*/

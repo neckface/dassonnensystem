@@ -7,7 +7,6 @@ import com.jme3.math.Vector3f;
 import com.jme3.scene.Geometry;
 import com.jme3.scene.Node;
 import com.jme3.scene.shape.Box;
-import com.jme3.scene.shape.Sphere;
 
 import java.util.ArrayList;
 import java.util.Iterator;
